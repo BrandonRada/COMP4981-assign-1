@@ -22,12 +22,12 @@ To build the program run:
 ./build.sh
 ```
 
-The files.txt file contains:
-```<executable> <source files> <header files> <libraries>```
+The files.txt file contains: ```<executable> <source files> <header files> <libraries>```
 
 After editing the files.txt
-1. run ./generate-cmakelists.sh
-2. run ./change-compiler.sh -c <compiler>
-3. run ./build.sh
+
+1. run ```./generate-cmakelists.sh```
+2. run ```./change-compiler.sh -c <compiler>```
+3. run ```./build.sh```
 
 When you need to add/removes files to/from the project you must rerun the 4 steps above. 
