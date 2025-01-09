@@ -1,6 +1,7 @@
-#include "../include/display.h"
+#include "../include/handleClient.h"
 #include <arpa/inet.h>
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,26 +9,14 @@
 #include <unistd.h>
 
 #define PORT 8080
-#define BUFFER_SIZE 1024
 
 int main(void)
 {
-    char               buffer[BUFFER_SIZE];
-    char               method[BUFFER_SIZE];
-    char               uri[BUFFER_SIZE];
-    char               version[BUFFER_SIZE];
     struct sockaddr_in host_addr;
     struct sockaddr_in client_addr;
-    int                client_addrlen = sizeof(client_addr);
-    int                host_addrlen   = sizeof(host_addr);
+    socklen_t          client_len = sizeof(client_addr);
     int                sockfd;
-    int                sockn;
-    int                valread;
-    int                valwrite;
-    const char         resp[] = "HTTP/1.0 200 OK\r\n"
-                                "Server: webserver-c\r\n"
-                                "Content-type: text/html\r\n\r\n"
-                                "<html>hello, world</html>\r\n";
+    pthread_t          tid;
 
     // Create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -39,15 +28,12 @@ int main(void)
     printf("socket created successfully\n");
 
     // Create the address to bind the socket to
-    host_addr.sin_family        = AF_INET;
-    host_addr.sin_port          = htons(PORT);
-    host_addr.sin_addr.s_addr   = htonl(INADDR_ANY);
-    client_addr.sin_family      = AF_INET;
-    client_addr.sin_port        = htons(PORT);
-    client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    host_addr.sin_family      = AF_INET;
+    host_addr.sin_port        = htons(PORT);
+    host_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Bind the socket to the address
-    if(bind(sockfd, (struct sockaddr *)&host_addr, (socklen_t)host_addrlen) != 0)
+    if(bind(sockfd, (struct sockaddr *)&host_addr, sizeof(host_addr)) != 0)
     {
         perror("webserver (bind)");
         close(sockfd);
@@ -62,48 +48,39 @@ int main(void)
         close(sockfd);
         return 1;
     }
-    printf("server listening for connections\n");
+    printf("server listening for connections...\n");
 
     for(;;)
     {
         // Accept incoming connections
-        int newsockfd = accept(sockfd, (struct sockaddr *)&host_addr, (socklen_t *)&host_addrlen);
-        if(newsockfd < 0)
+        client_info_t *info = malloc(sizeof(client_info_t));
+        if(!info)
+        {
+            perror("webserver (malloc)");
+            continue;
+        }
+
+        info->socket_fd = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
+        if(info->socket_fd < 0)
         {
             perror("webserver (accept)");
+            free(info);
             continue;
         }
+
+        info->client_addr = client_addr;
         printf("connection accepted\n");
 
-        // Get client address
-        sockn = getsockname(newsockfd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addrlen);
-        if(sockn < 0)
+        // Create a new thread to handle the client
+        if(pthread_create(&tid, NULL, handle_client, info) != 0)
         {
-            perror("webserver (getsockname)");
+            perror("webserver (pthread_create)");
+            close(info->socket_fd);
+            free(info);
             continue;
         }
 
-        // Read from the socket
-        valread = (int)read(newsockfd, buffer, BUFFER_SIZE);
-        if(valread < 0)
-        {
-            perror("webserver (read)");
-            continue;
-        }
-
-        // Read the request
-        sscanf(buffer, "%1023s %1023s %1023s", method, uri, version);
-
-        printf("[%s:%u] %s %s %s\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), method, version, uri);
-
-        // Write to the socket
-        valwrite = (int)write(newsockfd, resp, strlen(resp));
-        if(valwrite < 0)
-        {
-            perror("webserver (write)");
-            continue;
-        }
-
-        close(newsockfd);
+        // Detach the thread so its resources are released when it finishes
+        pthread_detach(tid);
     }
 }
