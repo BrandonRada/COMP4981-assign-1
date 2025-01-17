@@ -58,7 +58,7 @@ int send_file(int socket_fd, const char *file_path)
 
 void *handle_client(void *arg)
 {
-    client_info_t     *info        = (client_info_t *)arg;
+    client_info       *info        = (client_info *)arg;
     int                newsockfd   = info->socket_fd;
     struct sockaddr_in client_addr = info->client_addr;
     struct stat        stat_buf;
@@ -80,6 +80,7 @@ void *handle_client(void *arg)
         perror("webserver (read)");
         close(newsockfd);
         free(info);
+        printf("Read from the socket connection closed\n");
         return NULL;
     }
 
@@ -95,6 +96,7 @@ void *handle_client(void *arg)
         write(newsockfd, not_allowed, sizeof(not_allowed) - 1);
         close(newsockfd);
         free(info);
+        printf("Check for supported methods connection closed\n");
         return NULL;
     }
 
@@ -106,6 +108,7 @@ void *handle_client(void *arg)
         write(newsockfd, not_found, sizeof(not_found) - 1);
         close(newsockfd);
         free(info);
+        printf("File serving logic connection closed\n");
         return NULL;
     }
 
@@ -123,5 +126,6 @@ void *handle_client(void *arg)
     close(file_fd);
     close(newsockfd);
     free(info);
+    printf("connection closed\n");
     return NULL;
 }

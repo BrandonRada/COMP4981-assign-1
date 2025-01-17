@@ -18,7 +18,7 @@ typedef struct
 {
     int                socket_fd;
     struct sockaddr_in client_addr;
-} client_info_t;
+} client_info;
 
 void *handle_client(void *arg);
 int   send_file(int socket_fd, const char *file_path);
