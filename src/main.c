@@ -11,7 +11,7 @@
 
 #define PORT 8080
 
-static int                   sockfd;             // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+static int sockfd;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 __attribute__((noreturn)) static void handle_sigint(int signal)
 {

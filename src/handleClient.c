@@ -69,9 +69,21 @@ void *handle_client(void *arg)
     char               uri[BUFFER_SIZE];
     char               version[BUFFER_SIZE];
     char               header[BUFFER_SIZE];
-    char               filepath[BUFFER_SIZE] = ".";
     const char         not_found[]           = "HTTP/1.0 404 Not Found\r\n\r\n";
     const char         not_allowed[]         = "HTTP/1.0 405 Method Not Allowed\r\n\r\n";
+    char               filepath[BUFFER_SIZE] = ".";
+    // code below will make it start from the home dir
+    /*const char *home_dir = getenv("HOME");
+    char        filepath[BUFFER_SIZE];
+    if(home_dir == NULL)
+    {
+        fprintf(stderr, "Could not find the home directory.\n");
+        close(newsockfd);
+        free(info);
+        return NULL;
+    }
+    strncpy(filepath, home_dir, BUFFER_SIZE - 1);
+    filepath[BUFFER_SIZE - 1] = '\0';*/
 
     // Read from the socket
     valread = (int)read(newsockfd, buffer, BUFFER_SIZE);
@@ -83,20 +95,21 @@ void *handle_client(void *arg)
         printf("Read from the socket connection closed\n");
         return NULL;
     }
+    buffer[valread] = '\0';
+    printf("\n==========Request received==========\n%s\n==========Request received==========\n\n", buffer);
 
     // Read the request
     sscanf(buffer, "%1023s %1023s %1023s", method, uri, version);
 
     // Log the request
     printf("[%s:%u] %s %s %s\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), method, version, uri);
-
     // Check for supported methods
     if(strcmp(method, "GET") != 0 && strcmp(method, "HEAD") != 0)
     {
         write(newsockfd, not_allowed, sizeof(not_allowed) - 1);
         close(newsockfd);
         free(info);
-        printf("Check for supported methods connection closed\n");
+        printf("Sending: %s\nclosing connection\n", not_allowed);
         return NULL;
     }
 
@@ -108,17 +121,19 @@ void *handle_client(void *arg)
         write(newsockfd, not_found, sizeof(not_found) - 1);
         close(newsockfd);
         free(info);
-        printf("File serving logic connection closed\n");
+        printf("Sending: %s\nclosing connection\n", not_found);
         return NULL;
     }
 
     // Read the file and prepare response
+    printf("Request is valid\n");
     fstat(file_fd, &stat_buf);
     snprintf(header, BUFFER_SIZE, "HTTP/1.0 200 OK\r\nContent-Length: %ld\r\n\r\n", stat_buf.st_size);
 
     write(newsockfd, header, strlen(header));
     if(strcmp(method, "GET") == 0)
     {
+        printf("Sending file: %s\n", filepath);
         send_file(newsockfd, filepath);
     }
 
@@ -126,6 +141,6 @@ void *handle_client(void *arg)
     close(file_fd);
     close(newsockfd);
     free(info);
-    printf("connection closed\n");
+    printf("closing connection\n");
     return NULL;
 }
