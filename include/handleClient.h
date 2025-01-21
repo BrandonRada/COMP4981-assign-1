@@ -16,7 +16,7 @@
 
 typedef struct
 {
-    int                socket_fd;
+    int                socket_fd;    // cppcheck-suppress unusedStructMember
     struct sockaddr_in client_addr;
 } client_info;
 

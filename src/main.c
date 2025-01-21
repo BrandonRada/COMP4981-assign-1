@@ -73,7 +73,8 @@ int main(void)
     for(;;)
     {
         // Accept incoming connections
-        client_info *info = malloc(sizeof(client_info));
+        //        client_info *info = malloc(sizeof(client_info));
+        client_info *info = (client_info *)malloc(sizeof(client_info));
         if(!info)
         {
             perror("webserver (malloc)");
