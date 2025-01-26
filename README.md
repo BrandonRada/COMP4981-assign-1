@@ -30,4 +30,4 @@ After editing the files.txt
 2. run ```./change-compiler.sh -c <compiler>```
 3. run ```./build.sh```
 
-When you need to add/removes files to/from the project you must rerun the 4 steps above. 
+When you need to add/removes files to/from the project you must rerun the 3 steps above. 
