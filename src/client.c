@@ -4,6 +4,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __APPLE__
+    #define SOCK_CLOEXEC 0
+#endif
+
 #define BUFFER_SIZE 1024
 #define TEN 10
 
@@ -28,7 +32,7 @@ int main(int argc, char *argv[])
     server_port = strtol(argv[2], NULL, TEN);
     uri         = argv[3];
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if(sockfd < 0)
     {

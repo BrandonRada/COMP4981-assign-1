@@ -9,6 +9,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#ifdef __APPLE__
+    #define SOCK_CLOEXEC 0
+#endif
+
 #define PORT 8080
 
 static int sockfd;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
@@ -28,7 +32,7 @@ int main(void)
     pthread_t          tid;
     int                opt = 1;
     // Create a socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if(sockfd == -1)
     {
         perror("webserver (socket)");
